@@ -1,0 +1,98 @@
+# ==============================
+# Dependencies
+# ==============================
+
+node_modules/
+.pnpm-store/
+
+# ==============================
+# Environment variables
+# ==============================
+
+.env
+.env.*
+!.env.example
+
+# ==============================
+# NestJS
+# ==============================
+
+dist/
+coverage/
+
+# ==============================
+# Next.js
+# ==============================
+
+.next/
+out/
+
+# ==============================
+# Expo / React Native
+# ==============================
+
+.expo/
+.expo-shared/
+
+android/
+ios/
+
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# ==============================
+# TypeScript
+# ==============================
+
+*.tsbuildinfo
+
+# ==============================
+# Logs
+# ==============================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==============================
+# SQL Server
+# ==============================
+
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.trn
+
+# ==============================
+# Editors
+# ==============================
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+
+# ==============================
+# Operating system
+# ==============================
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ==============================
+# Temporary files
+# ==============================
+
+tmp/
+temp/
+*.tmp
+*.swp
