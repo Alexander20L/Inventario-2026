@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model Empresa {
+  idEmpresa       BigInt   @id @default(autoincrement()) @map("id_empresa")
+  nombreLegal     String   @map("nombre_legal") @db.NVarChar(200)
+  nombreComercial String?  @map("nombre_comercial") @db.NVarChar(200)
+  numeroDocumento String   @unique @map("numero_documento") @db.VarChar(20)
+  correo          String?  @db.NVarChar(150)
+  telefono        String?  @db.VarChar(30)
+  direccion       String?  @db.NVarChar(300)
+  zonaHoraria     String   @default("America/Lima") @map("zona_horaria") @db.VarChar(50)
+  moneda          String   @default("PEN") @db.VarChar(10)
+  estado          String   @default("ACTIVO") @db.VarChar(20)
+  creadoEn        DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn   DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  suscripciones SuscripcionEmpresa[]
+  limites       LimiteEmpresa[]
+
+  @@map("EMPRESAS")
+}
+
+model PlanSaas {
+  idPlan        BigInt   @id @default(autoincrement()) @map("id_plan")
+  nombre        String   @unique @db.NVarChar(100)
+  descripcion   String?  @db.NVarChar(500)
+  precioMensual Decimal  @default(0) @map("precio_mensual") @db.Decimal(12, 2)
+  estado        String   @default("ACTIVO") @db.VarChar(20)
+  creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  limites       LimitePlan[]
+  suscripciones SuscripcionEmpresa[]
+
+  @@map("PLANES_SAAS")
+}
+
+model LimitePlan {
+  idLimitePlan  BigInt   @id @default(autoincrement()) @map("id_limite_plan")
+  planId        BigInt   @map("plan_id")
+  recurso       String   @db.VarChar(50)
+  limite        BigInt
+  creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  plan PlanSaas @relation(fields: [planId], references: [idPlan])
+
+  @@unique([planId, recurso])
+  @@index([planId])
+  @@map("LIMITES_PLAN")
+}
+
+model SuscripcionEmpresa {
+  idSuscripcion BigInt    @id @default(autoincrement()) @map("id_suscripcion")
+  empresaId     BigInt    @map("empresa_id")
+  planId        BigInt    @map("plan_id")
+  fechaInicio   DateTime  @map("fecha_inicio") @db.Date
+  fechaFin      DateTime? @map("fecha_fin") @db.Date
+  estado        String    @default("ACTIVA") @db.VarChar(20)
+  creadoEn      DateTime  @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn DateTime  @updatedAt @map("actualizado_en") @db.DateTime2
+
+  empresa Empresa  @relation(fields: [empresaId], references: [idEmpresa])
+  plan    PlanSaas @relation(fields: [planId], references: [idPlan])
+
+  @@index([empresaId])
+  @@index([planId])
+  @@map("SUSCRIPCIONES_EMPRESA")
+}
+
+model LimiteEmpresa {
+  idLimiteEmpresa BigInt   @id @default(autoincrement()) @map("id_limite_empresa")
+  empresaId       BigInt   @map("empresa_id")
+  recurso         String   @db.VarChar(50)
+  limite          BigInt
+  creadoEn        DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn   DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  empresa Empresa @relation(fields: [empresaId], references: [idEmpresa])
+
+  @@unique([empresaId, recurso])
+  @@index([empresaId])
+  @@map("LIMITES_EMPRESA")
+}

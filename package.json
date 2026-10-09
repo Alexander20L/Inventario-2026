@@ -1,0 +1,10 @@
+﻿{
+  "name": "inventario-2026",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema SaaS de inventario y punto de venta",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24"
+  }
+}

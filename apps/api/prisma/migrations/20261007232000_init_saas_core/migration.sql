@@ -1,0 +1,108 @@
+BEGIN TRY
+
+BEGIN TRAN;
+
+-- CreateTable
+CREATE TABLE [dbo].[EMPRESAS] (
+    [id_empresa] BIGINT NOT NULL IDENTITY(1,1),
+    [nombre_legal] NVARCHAR(200) NOT NULL,
+    [nombre_comercial] NVARCHAR(200),
+    [numero_documento] VARCHAR(20) NOT NULL,
+    [correo] NVARCHAR(150),
+    [telefono] VARCHAR(30),
+    [direccion] NVARCHAR(300),
+    [zona_horaria] VARCHAR(50) NOT NULL CONSTRAINT [EMPRESAS_zona_horaria_df] DEFAULT 'America/Lima',
+    [moneda] VARCHAR(10) NOT NULL CONSTRAINT [EMPRESAS_moneda_df] DEFAULT 'PEN',
+    [estado] VARCHAR(20) NOT NULL CONSTRAINT [EMPRESAS_estado_df] DEFAULT 'ACTIVO',
+    [creado_en] DATETIME2 NOT NULL CONSTRAINT [EMPRESAS_creado_en_df] DEFAULT CURRENT_TIMESTAMP,
+    [actualizado_en] DATETIME2 NOT NULL,
+    CONSTRAINT [EMPRESAS_pkey] PRIMARY KEY CLUSTERED ([id_empresa]),
+    CONSTRAINT [EMPRESAS_numero_documento_key] UNIQUE NONCLUSTERED ([numero_documento])
+);
+
+-- CreateTable
+CREATE TABLE [dbo].[PLANES_SAAS] (
+    [id_plan] BIGINT NOT NULL IDENTITY(1,1),
+    [nombre] NVARCHAR(100) NOT NULL,
+    [descripcion] NVARCHAR(500),
+    [precio_mensual] DECIMAL(12,2) NOT NULL CONSTRAINT [PLANES_SAAS_precio_mensual_df] DEFAULT 0,
+    [estado] VARCHAR(20) NOT NULL CONSTRAINT [PLANES_SAAS_estado_df] DEFAULT 'ACTIVO',
+    [creado_en] DATETIME2 NOT NULL CONSTRAINT [PLANES_SAAS_creado_en_df] DEFAULT CURRENT_TIMESTAMP,
+    [actualizado_en] DATETIME2 NOT NULL,
+    CONSTRAINT [PLANES_SAAS_pkey] PRIMARY KEY CLUSTERED ([id_plan]),
+    CONSTRAINT [PLANES_SAAS_nombre_key] UNIQUE NONCLUSTERED ([nombre])
+);
+
+-- CreateTable
+CREATE TABLE [dbo].[LIMITES_PLAN] (
+    [id_limite_plan] BIGINT NOT NULL IDENTITY(1,1),
+    [plan_id] BIGINT NOT NULL,
+    [recurso] VARCHAR(50) NOT NULL,
+    [limite] BIGINT NOT NULL,
+    [creado_en] DATETIME2 NOT NULL CONSTRAINT [LIMITES_PLAN_creado_en_df] DEFAULT CURRENT_TIMESTAMP,
+    [actualizado_en] DATETIME2 NOT NULL,
+    CONSTRAINT [LIMITES_PLAN_pkey] PRIMARY KEY CLUSTERED ([id_limite_plan]),
+    CONSTRAINT [LIMITES_PLAN_plan_id_recurso_key] UNIQUE NONCLUSTERED ([plan_id],[recurso])
+);
+
+-- CreateTable
+CREATE TABLE [dbo].[SUSCRIPCIONES_EMPRESA] (
+    [id_suscripcion] BIGINT NOT NULL IDENTITY(1,1),
+    [empresa_id] BIGINT NOT NULL,
+    [plan_id] BIGINT NOT NULL,
+    [fecha_inicio] DATE NOT NULL,
+    [fecha_fin] DATE,
+    [estado] VARCHAR(20) NOT NULL CONSTRAINT [SUSCRIPCIONES_EMPRESA_estado_df] DEFAULT 'ACTIVA',
+    [creado_en] DATETIME2 NOT NULL CONSTRAINT [SUSCRIPCIONES_EMPRESA_creado_en_df] DEFAULT CURRENT_TIMESTAMP,
+    [actualizado_en] DATETIME2 NOT NULL,
+    CONSTRAINT [SUSCRIPCIONES_EMPRESA_pkey] PRIMARY KEY CLUSTERED ([id_suscripcion])
+);
+
+-- CreateTable
+CREATE TABLE [dbo].[LIMITES_EMPRESA] (
+    [id_limite_empresa] BIGINT NOT NULL IDENTITY(1,1),
+    [empresa_id] BIGINT NOT NULL,
+    [recurso] VARCHAR(50) NOT NULL,
+    [limite] BIGINT NOT NULL,
+    [creado_en] DATETIME2 NOT NULL CONSTRAINT [LIMITES_EMPRESA_creado_en_df] DEFAULT CURRENT_TIMESTAMP,
+    [actualizado_en] DATETIME2 NOT NULL,
+    CONSTRAINT [LIMITES_EMPRESA_pkey] PRIMARY KEY CLUSTERED ([id_limite_empresa]),
+    CONSTRAINT [LIMITES_EMPRESA_empresa_id_recurso_key] UNIQUE NONCLUSTERED ([empresa_id],[recurso])
+);
+
+-- CreateIndex
+CREATE NONCLUSTERED INDEX [LIMITES_PLAN_plan_id_idx] ON [dbo].[LIMITES_PLAN]([plan_id]);
+
+-- CreateIndex
+CREATE NONCLUSTERED INDEX [SUSCRIPCIONES_EMPRESA_empresa_id_idx] ON [dbo].[SUSCRIPCIONES_EMPRESA]([empresa_id]);
+
+-- CreateIndex
+CREATE NONCLUSTERED INDEX [SUSCRIPCIONES_EMPRESA_plan_id_idx] ON [dbo].[SUSCRIPCIONES_EMPRESA]([plan_id]);
+
+-- CreateIndex
+CREATE NONCLUSTERED INDEX [LIMITES_EMPRESA_empresa_id_idx] ON [dbo].[LIMITES_EMPRESA]([empresa_id]);
+
+-- AddForeignKey
+ALTER TABLE [dbo].[LIMITES_PLAN] ADD CONSTRAINT [LIMITES_PLAN_plan_id_fkey] FOREIGN KEY ([plan_id]) REFERENCES [dbo].[PLANES_SAAS]([id_plan]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE [dbo].[SUSCRIPCIONES_EMPRESA] ADD CONSTRAINT [SUSCRIPCIONES_EMPRESA_empresa_id_fkey] FOREIGN KEY ([empresa_id]) REFERENCES [dbo].[EMPRESAS]([id_empresa]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE [dbo].[SUSCRIPCIONES_EMPRESA] ADD CONSTRAINT [SUSCRIPCIONES_EMPRESA_plan_id_fkey] FOREIGN KEY ([plan_id]) REFERENCES [dbo].[PLANES_SAAS]([id_plan]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE [dbo].[LIMITES_EMPRESA] ADD CONSTRAINT [LIMITES_EMPRESA_empresa_id_fkey] FOREIGN KEY ([empresa_id]) REFERENCES [dbo].[EMPRESAS]([id_empresa]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+COMMIT TRAN;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0
+BEGIN
+    ROLLBACK TRAN;
+END;
+THROW
+
+END CATCH
