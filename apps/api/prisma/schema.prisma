@@ -21,71 +21,166 @@ model Empresa {
   creadoEn        DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn   DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  suscripciones SuscripcionEmpresa[]
-  limites       LimiteEmpresa[]
+  usuarios     UsuarioEmpresa[]
+  invitaciones InvitacionEmpresa[]
+  sesiones     SesionAcceso[]
+  productos    Producto[]
+  proveedores  Proveedor[]
 
   @@map("EMPRESAS")
 }
 
-model PlanSaas {
-  idPlan        BigInt   @id @default(autoincrement()) @map("id_plan")
-  nombre        String   @unique @db.NVarChar(100)
-  descripcion   String?  @db.NVarChar(500)
-  precioMensual Decimal  @default(0) @map("precio_mensual") @db.Decimal(12, 2)
+model Usuario {
+  idUsuario     BigInt   @id @default(autoincrement()) @map("id_usuario")
+  nombre        String   @db.NVarChar(150)
+  correo        String   @unique @db.VarChar(150)
+  passwordHash  String   @map("password_hash") @db.VarChar(255)
   estado        String   @default("ACTIVO") @db.VarChar(20)
   creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  limites       LimitePlan[]
-  suscripciones SuscripcionEmpresa[]
+  empresas             UsuarioEmpresa[]
+  sesiones             SesionAcceso[]
+  invitacionesEnviadas InvitacionEmpresa[]
 
-  @@map("PLANES_SAAS")
+  @@map("USUARIOS")
 }
 
-model LimitePlan {
-  idLimitePlan  BigInt   @id @default(autoincrement()) @map("id_limite_plan")
-  planId        BigInt   @map("plan_id")
-  recurso       String   @db.VarChar(50)
-  limite        BigInt
+model UsuarioEmpresa {
+  idUsuarioEmpresa BigInt   @id @default(autoincrement()) @map("id_usuario_empresa")
+  usuarioId        BigInt   @map("usuario_id")
+  empresaId        BigInt   @map("empresa_id")
+  rol              String   @default("TRABAJADOR") @db.VarChar(30)
+  estado           String   @default("ACTIVO") @db.VarChar(20)
+  creadoEn         DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn    DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  usuario Usuario @relation(fields: [usuarioId], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+  empresa Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([usuarioId, empresaId])
+  @@index([empresaId])
+  @@map("USUARIOS_EMPRESAS")
+}
+
+model InvitacionEmpresa {
+  idInvitacion BigInt    @id @default(autoincrement()) @map("id_invitacion")
+  empresaId    BigInt    @map("empresa_id")
+  creadoPorId  BigInt    @map("creado_por_id")
+  correo       String    @db.VarChar(150)
+  rol          String    @default("TRABAJADOR") @db.VarChar(30)
+  tokenHash    String    @unique @map("token_hash") @db.VarChar(64)
+  expiraEn     DateTime  @map("expira_en") @db.DateTime2
+  aceptadaEn   DateTime? @map("aceptada_en") @db.DateTime2
+  revocadaEn   DateTime? @map("revocada_en") @db.DateTime2
+  creadoEn     DateTime  @default(now()) @map("creado_en") @db.DateTime2
+
+  empresa   Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  creadoPor Usuario @relation(fields: [creadoPorId], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([empresaId, correo])
+  @@index([creadoPorId])
+  @@map("INVITACIONES_EMPRESA")
+}
+
+model SesionAcceso {
+  idSesion   BigInt    @id @default(autoincrement()) @map("id_sesion")
+  usuarioId  BigInt    @map("usuario_id")
+  empresaId  BigInt    @map("empresa_id")
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(64)
+  expiraEn   DateTime  @map("expira_en") @db.DateTime2
+  revocadaEn DateTime? @map("revocada_en") @db.DateTime2
+  creadoEn   DateTime  @default(now()) @map("creado_en") @db.DateTime2
+
+  usuario Usuario @relation(fields: [usuarioId], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+  empresa Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([usuarioId, empresaId])
+  @@index([empresaId])
+  @@map("SESIONES_ACCESO")
+}
+
+model Producto {
+  idProducto    BigInt   @id @default(autoincrement()) @map("id_producto")
+  empresaId     BigInt   @map("empresa_id")
+  nombre        String   @db.NVarChar(200)
+  presentacion  String?  @db.NVarChar(150)
+  estado        String   @default("ACTIVO") @db.VarChar(20)
   creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  plan PlanSaas @relation(fields: [planId], references: [idPlan])
+  empresa     Empresa             @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  variantes   VarianteProducto[]
+  proveedores ProductoProveedor[]
 
-  @@unique([planId, recurso])
-  @@index([planId])
-  @@map("LIMITES_PLAN")
+  @@unique([idProducto, empresaId])
+  @@index([empresaId, estado])
+  @@map("PRODUCTOS")
 }
 
-model SuscripcionEmpresa {
-  idSuscripcion BigInt    @id @default(autoincrement()) @map("id_suscripcion")
-  empresaId     BigInt    @map("empresa_id")
-  planId        BigInt    @map("plan_id")
-  fechaInicio   DateTime  @map("fecha_inicio") @db.Date
-  fechaFin      DateTime? @map("fecha_fin") @db.Date
-  estado        String    @default("ACTIVA") @db.VarChar(20)
-  creadoEn      DateTime  @default(now()) @map("creado_en") @db.DateTime2
-  actualizadoEn DateTime  @updatedAt @map("actualizado_en") @db.DateTime2
+model VarianteProducto {
+  idVariante    BigInt   @id @default(autoincrement()) @map("id_variante")
+  empresaId     BigInt   @map("empresa_id")
+  productoId    BigInt   @map("producto_id")
+  nombre        String   @default("DEFAULT") @db.NVarChar(100)
+  precioVenta   Decimal  @map("precio_venta") @db.Decimal(12, 2)
+  stockMinimo   Int      @default(0) @map("stock_minimo")
+  creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  empresa Empresa  @relation(fields: [empresaId], references: [idEmpresa])
-  plan    PlanSaas @relation(fields: [planId], references: [idPlan])
+  producto Producto       @relation(fields: [productoId, empresaId], references: [idProducto, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  codigos  CodigoBarras[]
 
-  @@index([empresaId])
-  @@index([planId])
-  @@map("SUSCRIPCIONES_EMPRESA")
+  @@unique([idVariante, empresaId])
+  @@unique([productoId, empresaId, nombre])
+  @@map("VARIANTES_PRODUCTO")
 }
 
-model LimiteEmpresa {
-  idLimiteEmpresa BigInt   @id @default(autoincrement()) @map("id_limite_empresa")
+model CodigoBarras {
+  idCodigo   BigInt @id @default(autoincrement()) @map("id_codigo")
+  empresaId  BigInt @map("empresa_id")
+  varianteId BigInt @map("variante_id")
+  codigo     String @db.VarChar(64)
+
+  variante VarianteProducto @relation(fields: [varianteId, empresaId], references: [idVariante, empresaId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([empresaId, codigo])
+  @@unique([varianteId, empresaId])
+  @@map("CODIGOS_BARRAS")
+}
+
+model Proveedor {
+  idProveedor     BigInt   @id @default(autoincrement()) @map("id_proveedor")
   empresaId       BigInt   @map("empresa_id")
-  recurso         String   @db.VarChar(50)
-  limite          BigInt
+  nombreContacto  String   @map("nombre_contacto") @db.NVarChar(150)
+  distribuidora   String?  @db.NVarChar(200)
+  telefono        String   @db.VarChar(30)
+  correo          String?  @db.VarChar(150)
+  direccion       String?  @db.NVarChar(300)
+  numeroDocumento String?  @map("numero_documento") @db.VarChar(20)
+  diasVisita      String?  @map("dias_visita") @db.NVarChar(150)
+  notas           String?  @db.NVarChar(1000)
+  estado          String   @default("ACTIVO") @db.VarChar(20)
   creadoEn        DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn   DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  empresa Empresa @relation(fields: [empresaId], references: [idEmpresa])
+  empresa   Empresa             @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  productos ProductoProveedor[]
 
-  @@unique([empresaId, recurso])
-  @@index([empresaId])
-  @@map("LIMITES_EMPRESA")
+  @@unique([idProveedor, empresaId])
+  @@index([empresaId, estado])
+  @@map("PROVEEDORES")
+}
+
+model ProductoProveedor {
+  empresaId   BigInt @map("empresa_id")
+  productoId  BigInt @map("producto_id")
+  proveedorId BigInt @map("proveedor_id")
+
+  producto  Producto  @relation(fields: [productoId, empresaId], references: [idProducto, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  proveedor Proveedor @relation(fields: [proveedorId, empresaId], references: [idProveedor, empresaId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([empresaId, productoId, proveedorId])
+  @@index([proveedorId, empresaId])
+  @@map("PRODUCTOS_PROVEEDORES")
 }
