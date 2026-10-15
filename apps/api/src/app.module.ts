@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './infrastructure/database/prisma.module.js';
+import { AccessModule } from './access/access.module.js';
+import { CatalogModule } from './catalog/catalog.module.js';
 
 @Module({
   imports: [
@@ -11,6 +13,8 @@ import { PrismaModule } from './infrastructure/database/prisma.module.js';
       isGlobal: true,
     }),
     PrismaModule,
+    AccessModule,
+    CatalogModule,
   ],
   controllers: [AppController],
   providers: [AppService],

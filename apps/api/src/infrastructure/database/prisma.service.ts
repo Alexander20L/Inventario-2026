@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaMssql } from '@prisma/adapter-mssql';
 
@@ -15,14 +20,10 @@ function parseSqlServerConnectionString(connectionString: string) {
   const firstSemicolon = connection.indexOf(';');
 
   const serverPart =
-    firstSemicolon === -1
-      ? connection
-      : connection.slice(0, firstSemicolon);
+    firstSemicolon === -1 ? connection : connection.slice(0, firstSemicolon);
 
   const parametersPart =
-    firstSemicolon === -1
-      ? ''
-      : connection.slice(firstSemicolon + 1);
+    firstSemicolon === -1 ? '' : connection.slice(firstSemicolon + 1);
 
   const [server, portText] = serverPart.split(':');
 
@@ -78,14 +79,10 @@ function parseSqlServerConnectionString(connectionString: string) {
     parameters.get('user') ??
     parameters.get('username') ??
     parameters.get('uid');
-  const password =
-    parameters.get('password') ??
-    parameters.get('pwd');
+  const password = parameters.get('password') ?? parameters.get('pwd');
 
   if (!database || !user || !password) {
-    throw new Error(
-      'DATABASE_URL debe contener database, user y password',
-    );
+    throw new Error('DATABASE_URL debe contener database, user y password');
   }
 
   return {
@@ -112,12 +109,10 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor(configService: ConfigService) {
-    const databaseUrl =
-      configService.getOrThrow<string>('DATABASE_URL');
+  constructor(@Inject(ConfigService) configService: ConfigService) {
+    const databaseUrl = configService.getOrThrow<string>('DATABASE_URL');
 
-    const sqlConfig =
-      parseSqlServerConnectionString(databaseUrl);
+    const sqlConfig = parseSqlServerConnectionString(databaseUrl);
 
     const adapter = new PrismaMssql(sqlConfig);
 
