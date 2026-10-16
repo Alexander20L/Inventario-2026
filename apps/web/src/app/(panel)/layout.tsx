@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/session";
+import { requireUser } from "@/lib/session";
 import { DashboardShell } from "@/components/dashboard-shell";
 
 export default async function PanelLayout({
@@ -6,6 +6,6 @@ export default async function PanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireAdmin();
+  const user = await requireUser();
   return <DashboardShell user={user}>{children}</DashboardShell>;
 }

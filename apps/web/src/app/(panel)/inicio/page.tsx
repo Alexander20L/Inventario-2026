@@ -8,13 +8,14 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { requireAdmin } from "@/lib/session";
+import { requireUser } from "@/lib/session";
 import { ActionLink, PageHeader, ProductArt } from "@/components/ui";
 
 export const metadata = { title: "Inicio" };
 
 export default async function HomePage() {
-  const user = await requireAdmin();
+  const user = await requireUser();
+  const isAdmin = user.rol === "ADMINISTRADOR";
   return (
     <>
       <PageHeader
@@ -27,15 +28,37 @@ export default async function HomePage() {
       </PageHeader>
       <section className="welcome-banner">
         <div>
-          <span className="eyebrow">TODO EMPIEZA CON UN BUEN EQUIPO</span>
-          <h2>Tu tienda ya tiene un lugar.</h2>
+          <span className="eyebrow">
+            {isAdmin
+              ? "TODO EMPIEZA CON UN BUEN EQUIPO"
+              : "TU TIENDA, SIEMPRE A LA MANO"}
+          </span>
+
+          <h2>
+            {isAdmin
+              ? "Tu tienda ya tiene un lugar."
+              : "Todo listo para comenzar."}
+          </h2>
+
           <p>
-            Invita a las personas que trabajan contigo y prepara el siguiente
-            paso de tu negocio.
+            {isAdmin
+              ? "Invita a las personas que trabajan contigo y prepara el siguiente paso de tu negocio."
+              : "Consulta el inventario de tu tienda y mantente al tanto de sus existencias."}
           </p>
-          <Link href="/usuarios/invitaciones" className="button">
-            <Users size={16} /> Invitar a mi equipo <ArrowRight size={15} />
-          </Link>
+
+          {isAdmin ? (
+            <Link href="/usuarios/invitaciones" className="button">
+              <Users size={16} />
+              Invitar a mi equipo
+              <ArrowRight size={15} />
+            </Link>
+          ) : (
+            <Link href="/inventario" className="button">
+              <Package size={16} />
+              Ver inventario
+              <ArrowRight size={15} />
+            </Link>
+          )}
         </div>
         <ProductArt />
       </section>
