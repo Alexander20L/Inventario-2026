@@ -1,16 +1,26 @@
-# Usuarios, tiendas e invitaciones
+# Usuarios, empresas e invitaciones
 
 ## Alcance implementado
 
-API para crear una tienda con su administrador, iniciar y cerrar sesión,
-invitar usuarios y administrar el acceso de trabajadores. No incluye planes,
-suscripciones ni límites comerciales. Las pantallas móviles y el envío de correo
-no están implementados todavía. La web en `apps/web/` permite compartir manualmente
-un enlace de invitación y aceptarlo.
+API de autenticación y acceso para usuarios pertenecientes a empresas. Permite
+iniciar y cerrar sesión, aceptar invitaciones, invitar usuarios y administrar
+el acceso de trabajadores.
 
-Roles iniciales: `ADMINISTRADOR` y `TRABAJADOR`. No hay roles personalizados ni
-permisos granulares en esta etapa. Un administrador puede invitar a otro
-administrador explícitamente; el rol predeterminado es trabajador.
+Actualmente todavía existe el endpoint público `POST /auth/register-company`,
+que permite crear una empresa con su primer administrador. Este flujo se mantiene
+temporalmente mientras se implementa el alta de empresas desde el módulo de
+administración de plataforma.
+
+El flujo objetivo será que un administrador de plataforma cree la empresa cliente
+y genere el acceso para su primer `ADMINISTRADOR`. Cuando ese flujo esté completo
+y probado, el registro público de empresas será retirado.
+
+Los administradores de plataforma utilizan autenticación y sesiones independientes.
+Consulta `docs/api/platform.md` para esa parte de la arquitectura.
+
+No incluye planes, suscripciones ni límites comerciales. Las pantallas móviles y
+el envío de correo no están implementados todavía. La web en `apps/web/` permite
+compartir manualmente un enlace de invitación y aceptarlo.
 
 ## Tablas
 
