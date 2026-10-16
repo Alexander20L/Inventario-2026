@@ -47,6 +47,29 @@ export async function requireAdmin() {
   if (user.rol !== "ADMINISTRADOR") redirect("/acceso-limitado");
   return user;
 }
+export async function userApi<T>(
+  path: string,
+  options: { method?: string; body?: unknown } = {},
+) {
+  await requireUser();
+
+  try {
+    return await api<T>(path, {
+      ...options,
+      token: await getToken(),
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      redirect("/iniciar-sesion?expired=1");
+    }
+
+    if (error instanceof ApiError && error.status === 403) {
+      redirect("/acceso-limitado");
+    }
+
+    throw error;
+  }
+}
 
 export async function privateApi<T>(
   path: string,
