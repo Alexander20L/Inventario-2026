@@ -25,12 +25,32 @@ import type { CurrentUser } from "@/lib/types";
 
 const navigation = [
   { href: "/inicio", label: "Inicio", icon: Home },
-  { href: "/productos", label: "Productos", icon: Package },
+  {
+    href: "/productos",
+    label: "Productos",
+    icon: Package,
+    adminOnly: true,
+  },
   { href: "/inventario", label: "Inventario", icon: ClipboardList },
-  { href: "/ventas", label: "Ventas", icon: ShoppingBag },
-  { href: "/proveedores", label: "Proveedores", icon: Truck },
-  { href: "/usuarios", label: "Usuarios", icon: Users },
-  { href: "/configuracion", label: "Configuración", icon: Settings2 },
+  { href: "/ventas", label: "Ventas", icon: ShoppingBag, adminOnly: true },
+  {
+    href: "/proveedores",
+    label: "Proveedores",
+    icon: Truck,
+    adminOnly: true,
+  },
+  {
+    href: "/usuarios",
+    label: "Usuarios",
+    icon: Users,
+    adminOnly: true,
+  },
+  {
+    href: "/configuracion",
+    label: "Configuración",
+    icon: Settings2,
+    adminOnly: true,
+  },
 ];
 
 export function DashboardShell({
@@ -50,8 +70,12 @@ export function DashboardShell({
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [open]);
+  const visibleNavigation = navigation.filter(
+    (item) => !item.adminOnly || user.rol === "ADMINISTRADOR",
+  );
   const section =
-    navigation.find((item) => path.startsWith(item.href))?.label ?? "Inicio";
+    visibleNavigation.find((item) => path.startsWith(item.href))?.label ??
+    "Inicio";
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -76,7 +100,10 @@ export function DashboardShell({
             {user.usuario.nombre.charAt(0).toUpperCase()}
           </span>
           <span className="header-account-name">
-            {user.usuario.nombre.split(" ")[0]} <small>· Administrador</small>
+            {user.usuario.nombre.split(" ")[0]}{" "}
+            <small>
+              · {user.rol === "ADMINISTRADOR" ? "Administrador" : "Trabajador"}
+            </small>
           </span>
           <form action={logoutAction}>
             <button className="logout-button">
@@ -103,7 +130,7 @@ export function DashboardShell({
         </div>
         <span className="sidebar-label">ADMINISTRACIÓN</span>
         <nav>
-          {navigation.map((item) => (
+          {visibleNavigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
