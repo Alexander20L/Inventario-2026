@@ -1,0 +1,36 @@
+BEGIN TRY
+
+BEGIN TRAN;
+
+-- CreateTable
+CREATE TABLE [dbo].[SUCURSALES] (
+    [id_sucursal] BIGINT NOT NULL IDENTITY(1,1),
+    [empresa_id] BIGINT NOT NULL,
+    [nombre] NVARCHAR(150) NOT NULL,
+    [direccion] NVARCHAR(300),
+    [telefono] VARCHAR(30),
+    [estado] VARCHAR(20) NOT NULL CONSTRAINT [SUCURSALES_estado_df] DEFAULT 'ACTIVO',
+    [creado_en] DATETIME2 NOT NULL CONSTRAINT [SUCURSALES_creado_en_df] DEFAULT CURRENT_TIMESTAMP,
+    [actualizado_en] DATETIME2 NOT NULL,
+    CONSTRAINT [SUCURSALES_pkey] PRIMARY KEY CLUSTERED ([id_sucursal]),
+    CONSTRAINT [SUCURSALES_empresa_id_nombre_key] UNIQUE NONCLUSTERED ([empresa_id],[nombre])
+);
+
+-- CreateIndex
+CREATE NONCLUSTERED INDEX [SUCURSALES_empresa_id_estado_idx] ON [dbo].[SUCURSALES]([empresa_id], [estado]);
+
+-- AddForeignKey
+ALTER TABLE [dbo].[SUCURSALES] ADD CONSTRAINT [SUCURSALES_empresa_id_fkey] FOREIGN KEY ([empresa_id]) REFERENCES [dbo].[EMPRESAS]([id_empresa]) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+COMMIT TRAN;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0
+BEGIN
+    ROLLBACK TRAN;
+END;
+THROW
+
+END CATCH

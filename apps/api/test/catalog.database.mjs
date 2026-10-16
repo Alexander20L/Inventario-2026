@@ -420,6 +420,11 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
         await tx.usuarioEmpresa.deleteMany({
           where: { OR: [{ empresaId }, { usuarioId }] },
         });
+
+        await tx.sucursal.deleteMany({
+          where: { empresaId },
+        });
+
         await tx.empresa.deleteMany({ where: { idEmpresa: empresaId } });
         await tx.usuario.deleteMany({ where: { idUsuario: usuarioId } });
       });

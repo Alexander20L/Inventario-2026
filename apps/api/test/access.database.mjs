@@ -50,6 +50,14 @@ await test('Acceso por invitación y aislamiento entre tiendas en SQL Server', a
         assert.equal(created.status, 201);
         owner = created.body;
         assert.equal(owner.rol, 'ADMINISTRADOR');
+
+        const sucursales = await db.sucursal.findMany({
+          where: { empresaId: BigInt(owner.empresaId) },
+        });
+        assert.equal(sucursales.length, 1);
+        assert.equal(sucursales[0].nombre, 'Sucursal Principal');
+        assert.equal(sucursales[0].estado, 'ACTIVO');
+
         const duplicate = await request('/auth/register-company', 'POST', {
           ...ownerBody,
           correo: `${prefix}-duplicate@example.test`,
@@ -550,6 +558,11 @@ await test('Acceso por invitación y aislamiento entre tiendas en SQL Server', a
         await tx.usuarioEmpresa.deleteMany({
           where: { OR: [{ empresaId }, { usuarioId }] },
         });
+
+        await tx.sucursal.deleteMany({
+          where: { empresaId },
+        });
+
         await tx.empresa.deleteMany({ where: { idEmpresa: empresaId } });
         await tx.usuario.deleteMany({ where: { idUsuario: usuarioId } });
       });
