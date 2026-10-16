@@ -225,6 +225,105 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
       },
     );
     await t.test(
+      'sucursales se aíslan por empresa e inicializan existencias en cero',
+      async () => {
+        const sinSesion = await request('/branches', 'GET', undefined, '');
+        assert.equal(sinSesion.status, 401);
+
+        const trabajador = await request(
+          '/branches',
+          'GET',
+          undefined,
+          worker.accessToken,
+        );
+        assert.equal(trabajador.status, 200);
+
+        const intentoTrabajador = await request(
+          '/branches',
+          'POST',
+          { nombre: 'Sucursal no permitida' },
+          worker.accessToken,
+        );
+        assert.equal(intentoTrabajador.status, 403);
+
+        const nombre = `Sucursal Centro ${prefix}`;
+
+        const created = await request('/branches', 'POST', {
+          nombre,
+          direccion: 'Av. Principal 123',
+          telefono: '999123456',
+          empresaId: other.empresaId,
+        });
+
+        assert.equal(created.status, 201);
+        assert.equal(created.body.nombre, nombre);
+        assert.equal(created.body.estado, 'ACTIVO');
+
+        const branchId = created.body.id;
+
+        const sucursal = await db.sucursal.findUniqueOrThrow({
+          where: {
+            idSucursal: BigInt(branchId),
+          },
+        });
+
+        assert.equal(sucursal.empresaId.toString(), owner.empresaId);
+
+        const existencia = await db.existencia.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+            sucursalId: BigInt(branchId),
+            varianteId: BigInt(product.varianteId),
+          },
+        });
+
+        assert.equal(existencia.stockActual, 0);
+
+        const duplicada = await request('/branches', 'POST', {
+          nombre,
+        });
+
+        assert.equal(duplicada.status, 409);
+
+        const intentoCruzado = await request(
+          `/branches/${branchId}`,
+          'PUT',
+          {
+            nombre: 'Sucursal ajena',
+            estado: 'ACTIVO',
+          },
+          other.accessToken,
+        );
+
+        assert.equal(intentoCruzado.status, 404);
+
+        const updated = await request(`/branches/${branchId}`, 'PUT', {
+          nombre: `${nombre} Norte`,
+          direccion: 'Av. Principal 456',
+          telefono: null,
+          estado: 'INACTIVO',
+        });
+
+        assert.equal(updated.status, 200);
+        assert.equal(updated.body.nombre, `${nombre} Norte`);
+        assert.equal(updated.body.estado, 'INACTIVO');
+        assert.equal(updated.body.telefono, null);
+
+        const otraEmpresa = await request(
+          '/branches',
+          'GET',
+          undefined,
+          other.accessToken,
+        );
+
+        assert.equal(otraEmpresa.status, 200);
+        assert.equal(
+          otraEmpresa.body.items.some((item) => item.id === branchId),
+          false,
+        );
+      },
+    );
+    await t.test(
       'entrada y salida de stock generan movimientos consistentes',
       async () => {
         const sucursal = await db.sucursal.findFirstOrThrow({

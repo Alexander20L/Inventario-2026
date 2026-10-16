@@ -7,6 +7,7 @@ import { PrismaModule } from './infrastructure/database/prisma.module.js';
 import { AccessModule } from './access/access.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
+import { BranchesModule } from './branches/branches.module.js';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { InventoryModule } from './inventory/inventory.module.js';
     AccessModule,
     CatalogModule,
     InventoryModule,
+    BranchesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
