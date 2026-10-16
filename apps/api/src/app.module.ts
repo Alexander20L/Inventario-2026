@@ -6,6 +6,7 @@ import { AppService } from './app.service.js';
 import { PrismaModule } from './infrastructure/database/prisma.module.js';
 import { AccessModule } from './access/access.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CatalogModule } from './catalog/catalog.module.js';
     PrismaModule,
     AccessModule,
     CatalogModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

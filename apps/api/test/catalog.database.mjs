@@ -4,10 +4,12 @@ import test from 'node:test';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../dist/app.module.js';
 import { PrismaService } from '../dist/infrastructure/database/prisma.service.js';
+import { InventoryService } from '../dist/inventory/inventory.service.js';
 
 await test('Catálogo, proveedores e integridad multiempresa en SQL Server', async (t) => {
   const app = await NestFactory.create(AppModule, { logger: ['error'] });
   const db = app.get(PrismaService);
+  const inventory = app.get(InventoryService);
   const prefix = `cat-${randomUUID().slice(0, 8)}`;
   const password = `Test-${randomUUID()}`;
   let owner, other, worker, supplier, otherSupplier, product;
@@ -222,6 +224,72 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
         );
       },
     );
+    await t.test(
+      'entrada y salida de stock generan movimientos consistentes',
+      async () => {
+        const sucursal = await db.sucursal.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+          },
+        });
+
+        const access = {
+          empresaId: BigInt(owner.empresaId),
+          usuarioId: BigInt(owner.usuario.id),
+        };
+
+        const entrada = await inventory.registrarMovimiento(access, {
+          sucursalId: sucursal.idSucursal,
+          varianteId: BigInt(product.varianteId),
+          tipoMovimiento: 'ENTRADA_INICIAL',
+          cantidad: 25,
+          observacion: 'Stock inicial de prueba',
+        });
+
+        assert.equal(entrada.stockAnterior, 0);
+        assert.equal(entrada.cantidad, 25);
+        assert.equal(entrada.stockPosterior, 25);
+
+        const salida = await inventory.registrarMovimiento(access, {
+          sucursalId: sucursal.idSucursal,
+          varianteId: BigInt(product.varianteId),
+          tipoMovimiento: 'SALIDA_MANUAL',
+          cantidad: -3,
+          observacion: 'Salida de prueba',
+        });
+
+        assert.equal(salida.stockAnterior, 25);
+        assert.equal(salida.cantidad, -3);
+        assert.equal(salida.stockPosterior, 22);
+
+        const existencia = await db.existencia.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+            sucursalId: sucursal.idSucursal,
+            varianteId: BigInt(product.varianteId),
+          },
+        });
+
+        assert.equal(existencia.stockActual, 22);
+
+        const movimientos = await db.movimientoInventario.findMany({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+            sucursalId: sucursal.idSucursal,
+            varianteId: BigInt(product.varianteId),
+          },
+          orderBy: {
+            idMovimiento: 'asc',
+          },
+        });
+
+        assert.equal(movimientos.length, 2);
+        assert.equal(movimientos[0].stockAnterior, 0);
+        assert.equal(movimientos[0].stockPosterior, 25);
+        assert.equal(movimientos[1].stockAnterior, 25);
+        assert.equal(movimientos[1].stockPosterior, 22);
+      },
+    );
 
     await t.test(
       'unicidad por tienda, conflictos atómicos y actualización sin duplicar variante',
@@ -424,6 +492,7 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
       const usuarioId = { in: usuarios.map((usuario) => usuario.idUsuario) };
       await db.$transaction(async (tx) => {
         await tx.productoProveedor.deleteMany({ where: { empresaId } });
+        await tx.movimientoInventario.deleteMany({where: { empresaId },});
         await tx.existencia.deleteMany({ where: { empresaId } });
         await tx.codigoBarras.deleteMany({ where: { empresaId } });
         await tx.varianteProducto.deleteMany({ where: { empresaId } });
