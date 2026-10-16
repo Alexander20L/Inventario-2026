@@ -70,6 +70,13 @@ export class AuthService {
         const empresa = await db.empresa.create({
           data: { nombreLegal, numeroDocumento, correo },
         });
+
+        await db.sucursal.create({
+          data: {
+            empresaId: empresa.idEmpresa,
+            nombre: 'Sucursal Principal',
+          },
+        });
         await db.usuarioEmpresa.create({
           data: {
             usuarioId: usuario.idUsuario,

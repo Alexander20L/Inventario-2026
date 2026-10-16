@@ -26,6 +26,7 @@ model Empresa {
   sesiones     SesionAcceso[]
   productos    Producto[]
   proveedores  Proveedor[]
+  sucursales   Sucursal[]
 
   @@map("EMPRESAS")
 }
@@ -183,4 +184,21 @@ model ProductoProveedor {
   @@id([empresaId, productoId, proveedorId])
   @@index([proveedorId, empresaId])
   @@map("PRODUCTOS_PROVEEDORES")
+}
+
+model Sucursal {
+  idSucursal     BigInt   @id @default(autoincrement()) @map("id_sucursal")
+  empresaId      BigInt   @map("empresa_id")
+  nombre         String   @db.NVarChar(150)
+  direccion      String?  @db.NVarChar(300)
+  telefono       String?  @db.VarChar(30)
+  estado         String   @default("ACTIVO") @db.VarChar(20)
+  creadoEn       DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn  DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  empresa Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId, estado])
+  @@map("SUCURSALES")
 }
