@@ -27,6 +27,7 @@ model Empresa {
   productos    Producto[]
   proveedores  Proveedor[]
   sucursales   Sucursal[]
+  movimientosInventario MovimientoInventario[]
 
   @@map("EMPRESAS")
 }
@@ -43,6 +44,7 @@ model Usuario {
   empresas             UsuarioEmpresa[]
   sesiones             SesionAcceso[]
   invitacionesEnviadas InvitacionEmpresa[]
+  
 
   @@map("USUARIOS")
 }
@@ -56,8 +58,9 @@ model UsuarioEmpresa {
   creadoEn         DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn    DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  usuario Usuario @relation(fields: [usuarioId], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
-  empresa Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  usuario               Usuario                @relation(fields: [usuarioId], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+  empresa               Empresa                @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  movimientosInventario MovimientoInventario[]
 
   @@unique([usuarioId, empresaId])
   @@index([empresaId])
@@ -132,6 +135,7 @@ model VarianteProducto {
   producto Producto       @relation(fields: [productoId, empresaId], references: [idProducto, empresaId], onDelete: NoAction, onUpdate: NoAction)
   codigos  CodigoBarras[]
   existencias Existencia[]
+  movimientosInventario MovimientoInventario[]
 
   @@unique([idVariante, empresaId])
   @@unique([productoId, empresaId, nombre])
@@ -201,6 +205,7 @@ model Sucursal {
 
   empresa Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
   existencias Existencia[]
+  movimientosInventario MovimientoInventario[]
 
 
   @@unique([empresaId, nombre])
@@ -224,4 +229,31 @@ model Existencia {
   @@index([empresaId, sucursalId])
   @@index([empresaId, varianteId])
   @@map("EXISTENCIAS")
+}
+
+model MovimientoInventario {
+  idMovimiento   BigInt    @id @default(autoincrement()) @map("id_movimiento")
+  empresaId      BigInt    @map("empresa_id")
+  sucursalId     BigInt    @map("sucursal_id")
+  varianteId     BigInt    @map("variante_id")
+  usuarioId      BigInt    @map("usuario_id")
+  tipoMovimiento String    @map("tipo_movimiento") @db.VarChar(40)
+  cantidad       Int
+  stockAnterior  Int       @map("stock_anterior")
+  stockPosterior Int       @map("stock_posterior")
+  costoUnitario  Decimal?  @map("costo_unitario") @db.Decimal(12, 2)
+  referenciaTipo String?   @map("referencia_tipo") @db.VarChar(40)
+  referenciaId   BigInt?   @map("referencia_id")
+  observacion    String?   @db.NVarChar(500)
+  fechaHora      DateTime  @default(now()) @map("fecha_hora") @db.DateTime2
+
+  empresa  Empresa          @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  sucursal Sucursal         @relation(fields: [sucursalId, empresaId], references: [idSucursal, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  variante VarianteProducto @relation(fields: [varianteId, empresaId], references: [idVariante, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  usuarioEmpresa UsuarioEmpresa @relation(fields: [usuarioId, empresaId], references: [usuarioId, empresaId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([empresaId, sucursalId, fechaHora])
+  @@index([empresaId, varianteId, fechaHora])
+  @@index([empresaId, usuarioId, fechaHora])
+  @@map("MOVIMIENTOS_INVENTARIO")
 }
