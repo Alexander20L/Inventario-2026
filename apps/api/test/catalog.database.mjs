@@ -290,6 +290,172 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
         assert.equal(movimientos[1].stockPosterior, 22);
       },
     );
+    await t.test(
+      'consulta de stock por sucursal respeta autenticación y empresa',
+      async () => {
+        const sucursal = await db.sucursal.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+          },
+        });
+
+        const path = `/inventory/stock/${sucursal.idSucursal.toString()}`;
+
+        const sinSesion = await request(path, 'GET', undefined, '');
+        assert.equal(sinSesion.status, 401);
+
+        const respuesta = await request(path);
+        assert.equal(respuesta.status, 200);
+
+        assert.equal(
+          respuesta.body.sucursal.id,
+          sucursal.idSucursal.toString(),
+        );
+        assert.equal(respuesta.body.sucursal.nombre, sucursal.nombre);
+
+        const productoStock = respuesta.body.productos.find(
+          (item) => item.varianteId === product.varianteId,
+        );
+
+        assert.ok(productoStock);
+        assert.equal(productoStock.stockActual, 22);
+        assert.equal(productoStock.nombre, body.nombre);
+        assert.equal(productoStock.codigoBarras, body.codigoBarras);
+
+        const trabajador = await request(
+          path,
+          'GET',
+          undefined,
+          worker.accessToken,
+        );
+
+        assert.equal(trabajador.status, 200);
+
+        const sucursalOtraEmpresa = await db.sucursal.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(other.empresaId),
+          },
+        });
+
+        const intentoCruzado = await request(
+          `/inventory/stock/${sucursalOtraEmpresa.idSucursal.toString()}`,
+        );
+
+        assert.equal(intentoCruzado.status, 404);
+      },
+    );
+    await t.test(
+      'endpoint de movimientos permite ajustes al administrador y protege el stock',
+      async () => {
+        const sucursal = await db.sucursal.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+          },
+        });
+
+        const payload = {
+          sucursalId: sucursal.idSucursal.toString(),
+          varianteId: product.varianteId,
+          tipoMovimiento: 'ENTRADA_MANUAL',
+          cantidad: 5,
+          observacion: 'Entrada desde API',
+        };
+
+        const trabajador = await request(
+          '/inventory/movements',
+          'POST',
+          payload,
+          worker.accessToken,
+        );
+
+        assert.equal(trabajador.status, 403);
+
+        const entrada = await request('/inventory/movements', 'POST', payload);
+
+        assert.equal(entrada.status, 201);
+        assert.equal(entrada.body.stockAnterior, 22);
+        assert.equal(entrada.body.cantidad, 5);
+        assert.equal(entrada.body.stockPosterior, 27);
+
+        const salida = await request('/inventory/movements', 'POST', {
+          sucursalId: sucursal.idSucursal.toString(),
+          varianteId: product.varianteId,
+          tipoMovimiento: 'SALIDA_MANUAL',
+          cantidad: 2,
+          observacion: 'Salida desde API',
+        });
+
+        assert.equal(salida.status, 201);
+        assert.equal(salida.body.stockAnterior, 27);
+        assert.equal(salida.body.cantidad, -2);
+        assert.equal(salida.body.stockPosterior, 25);
+
+        const insuficiente = await request('/inventory/movements', 'POST', {
+          sucursalId: sucursal.idSucursal.toString(),
+          varianteId: product.varianteId,
+          tipoMovimiento: 'SALIDA_MANUAL',
+          cantidad: 1000,
+        });
+
+        assert.equal(insuficiente.status, 400);
+
+        const existencia = await db.existencia.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+            sucursalId: sucursal.idSucursal,
+            varianteId: BigInt(product.varianteId),
+          },
+        });
+
+        assert.equal(existencia.stockActual, 25);
+      },
+    );
+    await t.test(
+      'historial de movimientos respeta empresa y filtros',
+      async () => {
+        const sucursal = await db.sucursal.findFirstOrThrow({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+          },
+        });
+
+        const historial = await request('/inventory/movements');
+
+        assert.equal(historial.status, 200);
+        assert.ok(historial.body.items.length >= 4);
+
+        const filtrado = await request(
+          `/inventory/movements?sucursalId=${sucursal.idSucursal.toString()}&varianteId=${product.varianteId}`,
+        );
+
+        assert.equal(filtrado.status, 200);
+        assert.ok(filtrado.body.items.length >= 4);
+
+        assert.ok(
+          filtrado.body.items.every(
+            (item) =>
+              item.sucursal.id === sucursal.idSucursal.toString() &&
+              item.variante.id === product.varianteId,
+          ),
+        );
+
+        const historialOtraEmpresa = await request(
+          '/inventory/movements',
+          'GET',
+          undefined,
+          other.accessToken,
+        );
+
+        assert.equal(historialOtraEmpresa.status, 200);
+
+        assert.equal(
+          historialOtraEmpresa.body.items.some(
+            (item) => item.variante.id === product.varianteId,
+          ),
+          false,
+        );
+      },
+    );
 
     await t.test(
       'unicidad por tienda, conflictos atómicos y actualización sin duplicar variante',
@@ -492,7 +658,7 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
       const usuarioId = { in: usuarios.map((usuario) => usuario.idUsuario) };
       await db.$transaction(async (tx) => {
         await tx.productoProveedor.deleteMany({ where: { empresaId } });
-        await tx.movimientoInventario.deleteMany({where: { empresaId },});
+        await tx.movimientoInventario.deleteMany({ where: { empresaId } });
         await tx.existencia.deleteMany({ where: { empresaId } });
         await tx.codigoBarras.deleteMany({ where: { empresaId } });
         await tx.varianteProducto.deleteMany({ where: { empresaId } });
