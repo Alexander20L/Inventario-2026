@@ -21,12 +21,12 @@ model Empresa {
   creadoEn        DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn   DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  usuarios     UsuarioEmpresa[]
-  invitaciones InvitacionEmpresa[]
-  sesiones     SesionAcceso[]
-  productos    Producto[]
-  proveedores  Proveedor[]
-  sucursales   Sucursal[]
+  usuarios              UsuarioEmpresa[]
+  invitaciones          InvitacionEmpresa[]
+  sesiones              SesionAcceso[]
+  productos             Producto[]
+  proveedores           Proveedor[]
+  sucursales            Sucursal[]
   movimientosInventario MovimientoInventario[]
 
   @@map("EMPRESAS")
@@ -44,7 +44,6 @@ model Usuario {
   empresas             UsuarioEmpresa[]
   sesiones             SesionAcceso[]
   invitacionesEnviadas InvitacionEmpresa[]
-  
 
   @@map("USUARIOS")
 }
@@ -132,9 +131,9 @@ model VarianteProducto {
   creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  producto Producto       @relation(fields: [productoId, empresaId], references: [idProducto, empresaId], onDelete: NoAction, onUpdate: NoAction)
-  codigos  CodigoBarras[]
-  existencias Existencia[]
+  producto              Producto               @relation(fields: [productoId, empresaId], references: [idProducto, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  codigos               CodigoBarras[]
+  existencias           Existencia[]
   movimientosInventario MovimientoInventario[]
 
   @@unique([idVariante, empresaId])
@@ -192,34 +191,31 @@ model ProductoProveedor {
 }
 
 model Sucursal {
-  idSucursal     BigInt   @id @default(autoincrement()) @map("id_sucursal")
-  empresaId      BigInt   @map("empresa_id")
-  nombre         String   @db.NVarChar(150)
-  direccion      String?  @db.NVarChar(300)
-  telefono       String?  @db.VarChar(30)
-  estado         String   @default("ACTIVO") @db.VarChar(20)
-  creadoEn       DateTime @default(now()) @map("creado_en") @db.DateTime2
-  actualizadoEn  DateTime @updatedAt @map("actualizado_en") @db.DateTime2
-  
-  
+  idSucursal    BigInt   @id @default(autoincrement()) @map("id_sucursal")
+  empresaId     BigInt   @map("empresa_id")
+  nombre        String   @db.NVarChar(150)
+  direccion     String?  @db.NVarChar(300)
+  telefono      String?  @db.VarChar(30)
+  estado        String   @default("ACTIVO") @db.VarChar(20)
+  creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
-  empresa Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
-  existencias Existencia[]
+  empresa               Empresa                @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  existencias           Existencia[]
   movimientosInventario MovimientoInventario[]
 
-
   @@unique([empresaId, nombre])
+  @@unique([idSucursal, empresaId])
   @@index([empresaId, estado])
   @@map("SUCURSALES")
-  @@unique([idSucursal, empresaId])
 }
 
 model Existencia {
-  idExistencia BigInt   @id @default(autoincrement()) @map("id_existencia")
-  empresaId    BigInt   @map("empresa_id")
-  sucursalId   BigInt   @map("sucursal_id")
-  varianteId   BigInt   @map("variante_id")
-  stockActual  Int      @default(0) @map("stock_actual")
+  idExistencia  BigInt   @id @default(autoincrement()) @map("id_existencia")
+  empresaId     BigInt   @map("empresa_id")
+  sucursalId    BigInt   @map("sucursal_id")
+  varianteId    BigInt   @map("variante_id")
+  stockActual   Int      @default(0) @map("stock_actual")
   actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
 
   sucursal Sucursal         @relation(fields: [sucursalId, empresaId], references: [idSucursal, empresaId], onDelete: NoAction, onUpdate: NoAction)
@@ -232,28 +228,56 @@ model Existencia {
 }
 
 model MovimientoInventario {
-  idMovimiento   BigInt    @id @default(autoincrement()) @map("id_movimiento")
-  empresaId      BigInt    @map("empresa_id")
-  sucursalId     BigInt    @map("sucursal_id")
-  varianteId     BigInt    @map("variante_id")
-  usuarioId      BigInt    @map("usuario_id")
-  tipoMovimiento String    @map("tipo_movimiento") @db.VarChar(40)
+  idMovimiento   BigInt   @id @default(autoincrement()) @map("id_movimiento")
+  empresaId      BigInt   @map("empresa_id")
+  sucursalId     BigInt   @map("sucursal_id")
+  varianteId     BigInt   @map("variante_id")
+  usuarioId      BigInt   @map("usuario_id")
+  tipoMovimiento String   @map("tipo_movimiento") @db.VarChar(40)
   cantidad       Int
-  stockAnterior  Int       @map("stock_anterior")
-  stockPosterior Int       @map("stock_posterior")
-  costoUnitario  Decimal?  @map("costo_unitario") @db.Decimal(12, 2)
-  referenciaTipo String?   @map("referencia_tipo") @db.VarChar(40)
-  referenciaId   BigInt?   @map("referencia_id")
-  observacion    String?   @db.NVarChar(500)
-  fechaHora      DateTime  @default(now()) @map("fecha_hora") @db.DateTime2
+  stockAnterior  Int      @map("stock_anterior")
+  stockPosterior Int      @map("stock_posterior")
+  costoUnitario  Decimal? @map("costo_unitario") @db.Decimal(12, 2)
+  referenciaTipo String?  @map("referencia_tipo") @db.VarChar(40)
+  referenciaId   BigInt?  @map("referencia_id")
+  observacion    String?  @db.NVarChar(500)
+  fechaHora      DateTime @default(now()) @map("fecha_hora") @db.DateTime2
 
-  empresa  Empresa          @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
-  sucursal Sucursal         @relation(fields: [sucursalId, empresaId], references: [idSucursal, empresaId], onDelete: NoAction, onUpdate: NoAction)
-  variante VarianteProducto @relation(fields: [varianteId, empresaId], references: [idVariante, empresaId], onDelete: NoAction, onUpdate: NoAction)
-  usuarioEmpresa UsuarioEmpresa @relation(fields: [usuarioId, empresaId], references: [usuarioId, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  empresa        Empresa          @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  sucursal       Sucursal         @relation(fields: [sucursalId, empresaId], references: [idSucursal, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  variante       VarianteProducto @relation(fields: [varianteId, empresaId], references: [idVariante, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  usuarioEmpresa UsuarioEmpresa   @relation(fields: [usuarioId, empresaId], references: [usuarioId, empresaId], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([empresaId, sucursalId, fechaHora])
   @@index([empresaId, varianteId, fechaHora])
   @@index([empresaId, usuarioId, fechaHora])
   @@map("MOVIMIENTOS_INVENTARIO")
+}
+
+model AdministradorPlataforma {
+  idAdministrador BigInt   @id @default(autoincrement()) @map("id_administrador")
+  nombre          String   @db.NVarChar(150)
+  correo          String   @unique @db.VarChar(150)
+  passwordHash    String   @map("password_hash") @db.VarChar(255)
+  estado          String   @default("ACTIVO") @db.VarChar(20)
+  creadoEn        DateTime @default(now()) @map("creado_en") @db.DateTime2
+  actualizadoEn   DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  sesiones SesionPlataforma[]
+
+  @@map("ADMINISTRADORES_PLATAFORMA")
+}
+
+model SesionPlataforma {
+  idSesion        BigInt    @id @default(autoincrement()) @map("id_sesion")
+  administradorId BigInt    @map("administrador_id")
+  tokenHash       String    @unique @map("token_hash") @db.VarChar(64)
+  expiraEn        DateTime  @map("expira_en") @db.DateTime2
+  revocadaEn      DateTime? @map("revocada_en") @db.DateTime2
+  creadoEn        DateTime  @default(now()) @map("creado_en") @db.DateTime2
+
+  administrador AdministradorPlataforma @relation(fields: [administradorId], references: [idAdministrador], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([administradorId])
+  @@map("SESIONES_PLATAFORMA")
 }

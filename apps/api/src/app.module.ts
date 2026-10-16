@@ -8,6 +8,7 @@ import { AccessModule } from './access/access.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { BranchesModule } from './branches/branches.module.js';
+import { PlatformModule } from './platform/platform.module.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { BranchesModule } from './branches/branches.module.js';
     CatalogModule,
     InventoryModule,
     BranchesModule,
+    PlatformModule,
   ],
   controllers: [AppController],
   providers: [AppService],
