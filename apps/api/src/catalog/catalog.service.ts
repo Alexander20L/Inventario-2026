@@ -185,6 +185,32 @@ export class CatalogService {
           varianteId: variant.idVariante,
           empresaId: access.empresaId,
         };
+        const sucursales = await db.sucursal.findMany({
+          where: {
+            empresaId: access.empresaId,
+          },
+          select: {
+            idSucursal: true,
+          },
+        });
+
+        for (const sucursal of sucursales) {
+          await db.existencia.upsert({
+            where: {
+              sucursalId_varianteId: {
+                sucursalId: sucursal.idSucursal,
+                varianteId: variant.idVariante,
+              },
+            },
+            create: {
+              empresaId: access.empresaId,
+              sucursalId: sucursal.idSucursal,
+              varianteId: variant.idVariante,
+              stockActual: 0,
+            },
+            update: {},
+          });
+        }
         await db.codigoBarras.upsert({
           where: { varianteId_empresaId: codeKey },
           create: { ...codeKey, codigo: data.codigoBarras },

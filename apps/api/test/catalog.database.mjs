@@ -155,6 +155,23 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
         });
         assert.equal(created.status, 201);
         product = created.body;
+
+        const sucursales = await db.sucursal.findMany({
+          where: { empresaId: BigInt(owner.empresaId) },
+        });
+
+        const existencias = await db.existencia.findMany({
+          where: {
+            empresaId: BigInt(owner.empresaId),
+            varianteId: BigInt(product.varianteId),
+          },
+        });
+
+        assert.equal(existencias.length, sucursales.length);
+        assert.ok(
+          existencias.every((existencia) => existencia.stockActual === 0),
+        );
+
         assert.equal(product.precioVenta, '12.50');
         assert.equal(product.codigoBarras, body.codigoBarras);
         assert.equal(product.proveedores[0].id, supplier.id);
@@ -407,6 +424,7 @@ await test('Catálogo, proveedores e integridad multiempresa en SQL Server', asy
       const usuarioId = { in: usuarios.map((usuario) => usuario.idUsuario) };
       await db.$transaction(async (tx) => {
         await tx.productoProveedor.deleteMany({ where: { empresaId } });
+        await tx.existencia.deleteMany({ where: { empresaId } });
         await tx.codigoBarras.deleteMany({ where: { empresaId } });
         await tx.varianteProducto.deleteMany({ where: { empresaId } });
         await tx.producto.deleteMany({ where: { empresaId } });

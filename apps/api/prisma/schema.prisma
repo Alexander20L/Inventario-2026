@@ -131,6 +131,7 @@ model VarianteProducto {
 
   producto Producto       @relation(fields: [productoId, empresaId], references: [idProducto, empresaId], onDelete: NoAction, onUpdate: NoAction)
   codigos  CodigoBarras[]
+  existencias Existencia[]
 
   @@unique([idVariante, empresaId])
   @@unique([productoId, empresaId, nombre])
@@ -195,10 +196,32 @@ model Sucursal {
   estado         String   @default("ACTIVO") @db.VarChar(20)
   creadoEn       DateTime @default(now()) @map("creado_en") @db.DateTime2
   actualizadoEn  DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+  
+  
 
   empresa Empresa @relation(fields: [empresaId], references: [idEmpresa], onDelete: NoAction, onUpdate: NoAction)
+  existencias Existencia[]
+
 
   @@unique([empresaId, nombre])
   @@index([empresaId, estado])
   @@map("SUCURSALES")
+  @@unique([idSucursal, empresaId])
+}
+
+model Existencia {
+  idExistencia BigInt   @id @default(autoincrement()) @map("id_existencia")
+  empresaId    BigInt   @map("empresa_id")
+  sucursalId   BigInt   @map("sucursal_id")
+  varianteId   BigInt   @map("variante_id")
+  stockActual  Int      @default(0) @map("stock_actual")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.DateTime2
+
+  sucursal Sucursal         @relation(fields: [sucursalId, empresaId], references: [idSucursal, empresaId], onDelete: NoAction, onUpdate: NoAction)
+  variante VarianteProducto @relation(fields: [varianteId, empresaId], references: [idVariante, empresaId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([sucursalId, varianteId])
+  @@index([empresaId, sucursalId])
+  @@index([empresaId, varianteId])
+  @@map("EXISTENCIAS")
 }
