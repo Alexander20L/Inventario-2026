@@ -60,7 +60,10 @@ Las rutas públicas de autenticación admiten hasta 30 solicitudes por minuto e 
 por proceso. En despliegues de varias instancias se necesita un contador compartido
 o una limitación en el proxy; no se confía automáticamente en `X-Forwarded-For`.
 
-### 1. Registrar al propietario y la tienda
+### 1. Registro público temporal de empresa
+> Este endpoint pertenece al flujo anterior de alta pública y será retirado
+> cuando el módulo de plataforma pueda crear empresas clientes y generar el
+> acceso de su primer administrador.
 
 `POST /auth/register-company`:
 
