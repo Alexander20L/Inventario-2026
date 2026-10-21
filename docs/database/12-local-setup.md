@@ -74,6 +74,15 @@ configuración de Prisma utilizada en este proyecto.
 
 ## Comprobar la API
 
+Los comandos `build`, `start`, `start:dev` y `start:debug` de la API regeneran
+automáticamente el cliente Prisma antes de compilar. Así se sincronizan los tipos
+con `schema.prisma` después de recibir cambios del repositorio. Este paso no
+aplica migraciones: la base se actualiza por separado con `db:deploy`.
+
+Si aparecen errores de TypeScript indicando que un modelo no existe en
+`PrismaService`, detener el modo watch y volver a ejecutar `start:dev`. También
+se puede regenerar explícitamente con `pnpm --filter api db:generate`.
+
 ```powershell
 pnpm --filter api build
 pnpm --filter api start:dev
